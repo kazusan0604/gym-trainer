@@ -35,6 +35,13 @@
             padding-bottom: 10px;
         }
 
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
         .input-group {
             margin-bottom: 15px;
         }
@@ -86,6 +93,19 @@
             background-color: #5568d3;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background-color: #17a2b8;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .btn-secondary:hover {
+            background-color: #138496;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(23, 162, 184, 0.4);
         }
 
         .btn-danger {
@@ -144,6 +164,46 @@
 
         .btn-timer-edit:hover {
             background-color: #138496;
+        }
+
+        .btn-category {
+            padding: 10px 20px;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            background-color: #e9ecef;
+            color: #333;
+            border: 2px solid transparent;
+            border-radius: 5px;
+        }
+
+        .btn-category:hover {
+            background-color: #dee2e6;
+        }
+
+        .btn-category.active {
+            background-color: #667eea;
+            color: white;
+            border-color: #5568d3;
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-add-category {
+            padding: 10px 15px;
+            font-size: 13px;
+            background-color: #28a745;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .btn-add-category:hover {
+            background-color: #218838;
         }
 
         ul {
@@ -414,19 +474,35 @@
             background-color: #c82333;
         }
 
-        .timer-control-btn.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
         .timer-widget.hidden {
             display: none;
+        }
+
+        .btn-delete-category {
+            background-color: #dc3545;
+            color: white;
+            padding: 6px 10px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        .btn-delete-category:hover {
+            background-color: #c82333;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>💪 トレーニング追加</h2>
+        <h2>💪 ジムメニュー管理</h2>
+
+        <!-- カテゴリ管理 -->
+        <h3>📂 トレーニングカテゴリ</h3>
+        <button class="btn-add-category" onclick="showAddCategoryModal()">+ 新しいカテゴリを追加</button>
+        
+        <div class="category-tabs" id="categoryTabs"></div>
+
+        <!-- トレーニング追加 -->
+        <h3 id="categoryTitle">トレーニング追加</h3>
         <div class="input-group">
             <input type="text" id="name" placeholder="種目名 (例: ベンチプレス)" required>
         </div>
@@ -481,28 +557,137 @@
             </div>
         </div>
         <ul id="menuList"></ul>
-        <button class="btn-reset" onclick="resetAll()">すべてをリセット</button>
+        <button class="btn-reset" onclick="resetCurrentCategory()">このカテゴリをリセット</button>
+    </div>
+
+    <!-- カテゴリ追加モーダル -->
+    <div id="categoryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+            <h3 style="margin-bottom: 20px; color: #333;">新しいカテゴリを追加</h3>
+            <input type="text" id="categoryNameInput" placeholder="カテゴリ名 (例: 胸の日)" style="width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+            <div style="display: flex; gap: 10px;">
+                <button onclick="addCategory()" style="flex: 1; padding: 12px; background-color: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">追加</button>
+                <button onclick="closeAddCategoryModal()" style="flex: 1; padding: 12px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">キャンセル</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        let menu = JSON.parse(localStorage.getItem("gymMenu")) || [];
+        let categories = JSON.parse(localStorage.getItem("gymCategories")) || [];
+        let menu = JSON.parse(localStorage.getItem("gymMenu")) || {};
+        let currentCategory = categories.length > 0 ? categories[0] : null;
         let timerInterval = null;
         let timerRunning = false;
         let timerSeconds = 0;
         let timerTotalSeconds = 0;
         let currentTimerIndex = -1;
 
+        // 初期化
+        if (categories.length === 0) {
+            categories = ["胸の日", "背中の日", "足の日"];
+            localStorage.setItem("gymCategories", JSON.stringify(categories));
+            menu = {
+                "胸の日": [],
+                "背中の日": [],
+                "足の日": []
+            };
+            localStorage.setItem("gymMenu", JSON.stringify(menu));
+            currentCategory = categories[0];
+        }
+
+        function renderCategories() {
+            const tabs = document.getElementById("categoryTabs");
+            tabs.innerHTML = "";
+            
+            categories.forEach(category => {
+                const btn = document.createElement("button");
+                btn.className = "btn-category" + (category === currentCategory ? " active" : "");
+                btn.innerHTML = `${category} <button class="btn-delete-category" onclick="deleteCategory('${category}'); event.stopPropagation();">×</button>`;
+                btn.onclick = () => selectCategory(category);
+                tabs.appendChild(btn);
+            });
+        }
+
+        function selectCategory(category) {
+            currentCategory = category;
+            renderCategories();
+            render();
+            document.getElementById("categoryTitle").textContent = `${category} - トレーニング追加`;
+        }
+
+        function showAddCategoryModal() {
+            document.getElementById("categoryModal").style.display = "flex";
+            document.getElementById("categoryNameInput").value = "";
+            document.getElementById("categoryNameInput").focus();
+        }
+
+        function closeAddCategoryModal() {
+            document.getElementById("categoryModal").style.display = "none";
+        }
+
+        function addCategory() {
+            const name = document.getElementById("categoryNameInput").value.trim();
+            
+            if (!name) {
+                alert("カテゴリ名を入力してください");
+                return;
+            }
+
+            if (categories.includes(name)) {
+                alert("このカテゴリは既に存在します");
+                return;
+            }
+
+            categories.push(name);
+            if (!menu[name]) {
+                menu[name] = [];
+            }
+            
+            localStorage.setItem("gymCategories", JSON.stringify(categories));
+            localStorage.setItem("gymMenu", JSON.stringify(menu));
+            
+            currentCategory = name;
+            renderCategories();
+            render();
+            closeAddCategoryModal();
+        }
+
+        function deleteCategory(category) {
+            if (confirm(`「${category}」を削除しますか？\n\nこの操作は取り消せません。`)) {
+                categories = categories.filter(c => c !== category);
+                delete menu[category];
+                
+                if (currentCategory === category) {
+                    currentCategory = categories.length > 0 ? categories[0] : null;
+                }
+                
+                localStorage.setItem("gymCategories", JSON.stringify(categories));
+                localStorage.setItem("gymMenu", JSON.stringify(menu));
+                
+                renderCategories();
+                render();
+            }
+        }
+
         function render() {
+            if (!currentCategory) {
+                document.getElementById("menuList").innerHTML = '<div class="empty-message">カテゴリを追加してください</div>';
+                updateStats();
+                return;
+            }
+
             const list = document.getElementById("menuList");
+            const currentMenu = menu[currentCategory] || [];
+            
             list.innerHTML = "";
 
-            if (menu.length === 0) {
+            if (currentMenu.length === 0) {
                 list.innerHTML = '<div class="empty-message">トレーニングメニューを追加してください</div>';
                 updateStats();
                 return;
             }
 
-            menu.forEach((item, index) => {
+            currentMenu.forEach((item, index) => {
                 const li = document.createElement("li");
                 const isChecked = item.done ? "checked" : "";
                 const doneClass = item.done ? "done" : "";
@@ -527,12 +712,20 @@
             });
 
             updateStats();
-            localStorage.setItem("gymMenu", JSON.stringify(menu));
+            saveData();
         }
 
         function updateStats() {
-            const totalCount = menu.length;
-            const doneCount = menu.filter(item => item.done).length;
+            if (!currentCategory) {
+                document.getElementById("totalCount").textContent = 0;
+                document.getElementById("doneCount").textContent = 0;
+                document.getElementById("progress").textContent = "0%";
+                return;
+            }
+
+            const currentMenu = menu[currentCategory] || [];
+            const totalCount = currentMenu.length;
+            const doneCount = currentMenu.filter(item => item.done).length;
             const progress = totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100);
 
             document.getElementById("totalCount").textContent = totalCount;
@@ -540,7 +733,16 @@
             document.getElementById("progress").textContent = progress + "%";
         }
 
+        function saveData() {
+            localStorage.setItem("gymMenu", JSON.stringify(menu));
+        }
+
         function addMenu() {
+            if (!currentCategory) {
+                alert("カテゴリを選択してください");
+                return;
+            }
+
             const name = document.getElementById("name").value.trim();
             const sets = document.getElementById("sets").value;
             const reps = document.getElementById("reps").value;
@@ -563,7 +765,11 @@
                 return;
             }
 
-            menu.push({ name, sets: parseInt(sets), reps: parseInt(reps), done: false, rest: 60 });
+            if (!menu[currentCategory]) {
+                menu[currentCategory] = [];
+            }
+
+            menu[currentCategory].push({ name, sets: parseInt(sets), reps: parseInt(reps), done: false, rest: 60 });
             document.getElementById("name").value = '';
             document.getElementById("sets").value = '';
             document.getElementById("reps").value = '';
@@ -572,14 +778,16 @@
         }
 
         function deleteMenu(index) {
-            if (confirm(`「${menu[index].name}」を削除しますか？`)) {
-                menu.splice(index, 1);
+            const currentMenu = menu[currentCategory] || [];
+            if (confirm(`「${currentMenu[index].name}」を削除しますか？`)) {
+                currentMenu.splice(index, 1);
                 render();
             }
         }
 
         function editMenu(index) {
-            const item = menu[index];
+            const currentMenu = menu[currentCategory] || [];
+            const item = currentMenu[index];
             const newName = prompt("種目名を入力:", item.name);
             if (newName === null) return;
 
@@ -604,7 +812,7 @@
                 return;
             }
 
-            menu[index] = {
+            currentMenu[index] = {
                 name: newName.trim(),
                 sets: parseInt(newSets),
                 reps: parseInt(newReps),
@@ -615,7 +823,8 @@
         }
 
         function editRestTime(index) {
-            const item = menu[index];
+            const currentMenu = menu[currentCategory] || [];
+            const item = currentMenu[index];
             const newRest = prompt("休憩時間を入力（秒）:", item.rest || 60);
             if (newRest === null) return;
 
@@ -624,18 +833,19 @@
                 return;
             }
 
-            menu[index].rest = parseInt(newRest);
+            currentMenu[index].rest = parseInt(newRest);
             render();
         }
 
         function toggle(index) {
-            menu[index].done = !menu[index].done;
+            const currentMenu = menu[currentCategory] || [];
+            currentMenu[index].done = !currentMenu[index].done;
             render();
         }
 
-        function resetAll() {
-            if (confirm("すべてのトレーニングメニューを削除しますか？\n\nこの操作は取り消せません。")) {
-                menu = [];
+        function resetCurrentCategory() {
+            if (confirm(`「${currentCategory}」のすべてのトレーニングメニューをリセットしますか？`)) {
+                menu[currentCategory] = [];
                 render();
             }
         }
@@ -651,13 +861,14 @@
             if (timerRunning) {
                 pauseTimer();
             }
+            const currentMenu = menu[currentCategory] || [];
             currentTimerIndex = index;
-            timerSeconds = menu[index].rest || 60;
+            timerSeconds = currentMenu[index].rest || 60;
             timerTotalSeconds = timerSeconds;
             
             document.getElementById("timerWidget").classList.remove("hidden");
-            document.getElementById("timerWidgetName").textContent = menu[index].name;
-            document.getElementById("timerWidgetInfo").textContent = `セット ${menu[index].sets} × ${menu[index].reps}回`;
+            document.getElementById("timerWidgetName").textContent = currentMenu[index].name;
+            document.getElementById("timerWidgetInfo").textContent = `セット ${currentMenu[index].sets} × ${currentMenu[index].reps}回`;
             document.getElementById("timerCustomInput").value = timerSeconds;
             updateTimerDisplay();
             updatePresetButtons();
@@ -694,8 +905,9 @@
             if (timerRunning) {
                 pauseTimer();
             }
-            if (currentTimerIndex >= 0) {
-                timerSeconds = menu[currentTimerIndex].rest || 60;
+            const currentMenu = menu[currentCategory] || [];
+            if (currentTimerIndex >= 0 && currentMenu[currentTimerIndex]) {
+                timerSeconds = currentMenu[currentTimerIndex].rest || 60;
                 timerTotalSeconds = timerSeconds;
                 document.getElementById("timerCustomInput").value = timerSeconds;
                 updateTimerDisplay();
@@ -709,7 +921,6 @@
             const timeStr = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
             document.getElementById("timerWidgetDisplay").textContent = timeStr;
 
-            // 色変更とアニメーション
             const display = document.getElementById("timerWidgetDisplay");
             const progress = timerTotalSeconds > 0 ? (timerTotalSeconds - timerSeconds) / timerTotalSeconds * 100 : 0;
             document.getElementById("timerWidgetProgress").style.width = progress + "%";
@@ -734,10 +945,10 @@
             updateTimerDisplay();
             updatePresetButtons();
             
-            // メニューにも反映
-            if (currentTimerIndex >= 0) {
-                menu[currentTimerIndex].rest = seconds;
-                localStorage.setItem("gymMenu", JSON.stringify(menu));
+            const currentMenu = menu[currentCategory] || [];
+            if (currentTimerIndex >= 0 && currentMenu[currentTimerIndex]) {
+                currentMenu[currentTimerIndex].rest = seconds;
+                saveData();
             }
         }
 
@@ -757,10 +968,10 @@
             updateTimerDisplay();
             updatePresetButtons();
             
-            // メニューにも反映
-            if (currentTimerIndex >= 0) {
-                menu[currentTimerIndex].rest = newValue;
-                localStorage.setItem("gymMenu", JSON.stringify(menu));
+            const currentMenu = menu[currentCategory] || [];
+            if (currentTimerIndex >= 0 && currentMenu[currentTimerIndex]) {
+                currentMenu[currentTimerIndex].rest = newValue;
+                saveData();
             }
         }
 
@@ -777,7 +988,6 @@
         }
 
         function playNotification() {
-            // ブラウザの通知音（Web Audio API）
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioContext.createOscillator();
@@ -810,7 +1020,12 @@
             if (e.key === "Enter") addMenu();
         });
 
+        document.getElementById("categoryNameInput").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") addCategory();
+        });
+
         // 初期表示
+        renderCategories();
         render();
     </script>
 </body>
