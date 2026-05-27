@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ジムメニュー</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-row input {
+            flex: 1;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background-color: #667eea;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .btn-primary:hover {
+            background-color: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            padding: 8px 12px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            color: #333;
+            padding: 8px 12px;
+            font-size: 14px;
+            margin-left: 5px;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+
+        .btn-reset {
+            width: 100%;
+            background-color: #6c757d;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .btn-reset:hover {
+            background-color: #5a6268;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 15px;
+            border: 2px solid #eee;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            transition: all 0.3s;
+        }
+
+        li:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
+        }
+
+        li.done {
+            background-color: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        input[type="checkbox"] {
+            transform: scale(1.5);
+            margin-right: 15px;
+            cursor: pointer;
+            width: auto;
+        }
+
+        .menu-content {
+            flex: 1;
+        }
+
+        .menu-name {
+            font-weight: bold;
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .menu-details {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .done .menu-name,
+        .done .menu-details {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        .menu-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-size: 16px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f0f4ff;
+            border-radius: 5px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .stat-value {
+            color: #667eea;
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>💪 トレーニング追加</h2>
+        <div class="input-group">
+            <input type="text" id="name" placeholder="種目名 (例: ベンチプレス)" required>
+        </div>
+        <div class="input-row">
+            <input type="number" id="sets" placeholder="セット数" min="1" required>
+            <input type="number" id="reps" placeholder="回数" min="1" required>
+        </div>
+        <button class="btn-primary" onclick="addMenu()">メニューに追加</button>
+
+        <h2>📋 本日のメニュー</h2>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">全体</div>
+                <div class="stat-value" id="totalCount">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">完了</div>
+                <div class="stat-value" id="doneCount">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">進捗</div>
+                <div class="stat-value" id="progress">0%</div>
+            </div>
+        </div>
+        <ul id="menuList"></ul>
+        <button class="btn-reset" onclick="resetAll()">すべてをリセット</button>
+    </div>
+
+    <script>
+        // ブラウザの保存領域（localStorage）からデータを読み込む
+        let menu = JSON.parse(localStorage.getItem("gymMenu")) || [];
+
+        function render() {
+            const list = document.getElementById("menuList");
+            list.innerHTML = "";
+
+            if (menu.length === 0) {
+                list.innerHTML = '<div class="empty-message">トレーニングメニューを追加してください</div>';
+                updateStats();
+                return;
+            }
+
+            menu.forEach((item, index) => {
+                const li = document.createElement("li");
+                const isChecked = item.done ? "checked" : "";
+                const doneClass = item.done ? "done" : "";
+
+                li.className = doneClass;
+                li.innerHTML = `
+                    <div style="display: flex; align-items: center; flex: 1;">
+                        <input type="checkbox" ${isChecked} onchange="toggle(${index})">
+                        <div class="menu-content">
+                            <div class="menu-name">${escapeHtml(item.name)}</div>
+                            <div class="menu-details">${item.sets}セット × ${item.reps}回</div>
+                        </div>
+                    </div>
+                    <div class="menu-actions">
+                        <button class="btn-warning" onclick="editMenu(${index})">編集</button>
+                        <button class="btn-danger" onclick="deleteMenu(${index})">削除</button>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+
+            updateStats();
+            // データをブラウザに保存する
+            localStorage.setItem("gymMenu", JSON.stringify(menu));
+        }
+
+        function updateStats() {
+            const totalCount = menu.length;
+            const doneCount = menu.filter(item => item.done).length;
+            const progress = totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100);
+
+            document.getElementById("totalCount").textContent = totalCount;
+            document.getElementById("doneCount").textContent = doneCount;
+            document.getElementById("progress").textContent = progress + "%";
+        }
+
+        function addMenu() {
+            const name = document.getElementById("name").value.trim();
+            const sets = document.getElementById("sets").value;
+            const reps = document.getElementById("reps").value;
+
+            if (!name) {
+                alert("種目名を入力してください");
+                document.getElementById("name").focus();
+                return;
+            }
+
+            if (!sets || sets <= 0) {
+                alert("セット数は1以上の数値を入力してください");
+                document.getElementById("sets").focus();
+                return;
+            }
+
+            if (!reps || reps <= 0) {
+                alert("回数は1以上の数値を入力してください");
+                document.getElementById("reps").focus();
+                return;
+            }
+
+            menu.push({ name, sets: parseInt(sets), reps: parseInt(reps), done: false });
+            document.getElementById("name").value = '';
+            document.getElementById("sets").value = '';
+            document.getElementById("reps").value = '';
+            document.getElementById("name").focus();
+            render();
+        }
+
+        function deleteMenu(index) {
+            if (confirm(`「${menu[index].name}」を削除しますか？`)) {
+                menu.splice(index, 1);
+                render();
+            }
+        }
+
+        function editMenu(index) {
+            const item = menu[index];
+            const newName = prompt("種目名を入力:", item.name);
+            if (newName === null) return;
+
+            if (!newName.trim()) {
+                alert("種目名を入力してください");
+                return;
+            }
+
+            const newSets = prompt("セット数を入力:", item.sets);
+            if (newSets === null) return;
+
+            if (!newSets || newSets <= 0) {
+                alert("セット数は1以上の数値を入力してください");
+                return;
+            }
+
+            const newReps = prompt("回数を入力:", item.reps);
+            if (newReps === null) return;
+
+            if (!newReps || newReps <= 0) {
+                alert("回数は1以上の数値を入力してください");
+                return;
+            }
+
+            menu[index] = {
+                name: newName.trim(),
+                sets: parseInt(newSets),
+                reps: parseInt(newReps),
+                done: item.done
+            };
+            render();
+        }
+
+        function toggle(index) {
+            menu[index].done = !menu[index].done;
+            render();
+        }
+
+        function resetAll() {
+            if (confirm("すべてのトレーニングメニューを削除しますか？\n\nこの操作は取り消せません。")) {
+                menu = [];
+                render();
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Enterキーでメニュー追加
+        document.getElementById("name").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") document.getElementById("sets").focus();
+        });
+        document.getElementById("sets").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") document.getElementById("reps").focus();
+        });
+        document.getElementById("reps").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") addMenu();
+        });
+
+        // 初期表示
+        render();
+    </script>
+</body>
+</html>
