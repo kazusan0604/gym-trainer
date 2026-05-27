@@ -123,6 +123,21 @@
             background-color: #5a6268;
         }
 
+        .btn-timer {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .btn-timer:hover {
+            background-color: #218838;
+        }
+
+        .btn-timer.active {
+            background-color: #ff9800;
+        }
+
         ul {
             list-style: none;
             padding: 0;
@@ -182,6 +197,7 @@
         .menu-actions {
             display: flex;
             gap: 5px;
+            align-items: center;
         }
 
         .empty-message {
@@ -214,6 +230,115 @@
             color: #667eea;
             font-size: 24px;
             font-weight: bold;
+        }
+
+        /* タイマーモーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .timer-display {
+            font-size: 72px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 30px 0;
+            font-family: 'Courier New', monospace;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .timer-display.warning {
+            color: #ff9800;
+        }
+
+        .timer-display.danger {
+            color: #dc3545;
+        }
+
+        .timer-name {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .timer-info {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .timer-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .timer-buttons button {
+            flex: 1;
+            padding: 15px;
+            font-size: 18px;
+        }
+
+        .btn-play {
+            background-color: #28a745;
+        }
+
+        .btn-play:hover {
+            background-color: #218838;
+        }
+
+        .btn-pause {
+            background-color: #ff9800;
+        }
+
+        .btn-pause:hover {
+            background-color: #e68900;
+        }
+
+        .btn-close-modal {
+            background-color: #6c757d;
+        }
+
+        .btn-close-modal:hover {
+            background-color: #5a6268;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #eee;
+            border-radius: 4px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #667eea;
+            transition: width 0.1s;
         }
     </style>
 </head>
@@ -248,9 +373,30 @@
         <button class="btn-reset" onclick="resetAll()">すべてをリセット</button>
     </div>
 
+    <!-- タイマーモーダル -->
+    <div id="timerModal" class="modal">
+        <div class="modal-content">
+            <div class="timer-name" id="timerName">タイマー</div>
+            <div class="timer-info" id="timerInfo">残り時間</div>
+            <div class="timer-display" id="timerDisplay">00:00</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+            </div>
+            <div class="timer-buttons">
+                <button class="btn-play" id="playBtn" onclick="startTimer()">開始</button>
+                <button class="btn-pause" id="pauseBtn" onclick="pauseTimer()" style="display: none;">一時停止</button>
+                <button class="btn-close-modal" onclick="closeTimer()">閉じる</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // ブラウザの保存領域（localStorage）からデータを読み込む
         let menu = JSON.parse(localStorage.getItem("gymMenu")) || [];
+        let timerInterval = null;
+        let timerRunning = false;
+        let timerSeconds = 0;
+        let timerTotalSeconds = 0;
+        let currentTimerIndex = -1;
 
         function render() {
             const list = document.getElementById("menuList");
@@ -277,6 +423,7 @@
                         </div>
                     </div>
                     <div class="menu-actions">
+                        <button class="btn-timer" onclick="openTimer(${index})">⏱ ${item.rest || 60}秒</button>
                         <button class="btn-warning" onclick="editMenu(${index})">編集</button>
                         <button class="btn-danger" onclick="deleteMenu(${index})">削除</button>
                     </div>
@@ -285,7 +432,6 @@
             });
 
             updateStats();
-            // データをブラウザに保存する
             localStorage.setItem("gymMenu", JSON.stringify(menu));
         }
 
@@ -322,7 +468,7 @@
                 return;
             }
 
-            menu.push({ name, sets: parseInt(sets), reps: parseInt(reps), done: false });
+            menu.push({ name, sets: parseInt(sets), reps: parseInt(reps), done: false, rest: 60 });
             document.getElementById("name").value = '';
             document.getElementById("sets").value = '';
             document.getElementById("reps").value = '';
@@ -363,10 +509,19 @@
                 return;
             }
 
+            const newRest = prompt("休憩時間を入力（秒）:", item.rest || 60);
+            if (newRest === null) return;
+
+            if (!newRest || newRest <= 0) {
+                alert("休憩時間は1以上の数値を入力してください");
+                return;
+            }
+
             menu[index] = {
                 name: newName.trim(),
                 sets: parseInt(newSets),
                 reps: parseInt(newReps),
+                rest: parseInt(newRest),
                 done: item.done
             };
             render();
@@ -388,6 +543,95 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // タイマー機能
+        function openTimer(index) {
+            if (timerRunning) {
+                pauseTimer();
+            }
+            currentTimerIndex = index;
+            timerSeconds = menu[index].rest || 60;
+            timerTotalSeconds = timerSeconds;
+            
+            document.getElementById("timerName").textContent = menu[index].name;
+            document.getElementById("timerInfo").textContent = `セット ${menu[index].sets} × ${menu[index].reps}回`;
+            document.getElementById("timerModal").classList.add("active");
+            updateTimerDisplay();
+        }
+
+        function closeTimer() {
+            if (timerRunning) {
+                pauseTimer();
+            }
+            document.getElementById("timerModal").classList.remove("active");
+            currentTimerIndex = -1;
+        }
+
+        function startTimer() {
+            if (timerRunning) return;
+            timerRunning = true;
+            document.getElementById("playBtn").style.display = "none";
+            document.getElementById("pauseBtn").style.display = "block";
+
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                updateTimerDisplay();
+
+                if (timerSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    timerRunning = false;
+                    playNotification();
+                    document.getElementById("playBtn").style.display = "block";
+                    document.getElementById("pauseBtn").style.display = "none";
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            timerRunning = false;
+            document.getElementById("playBtn").style.display = "block";
+            document.getElementById("pauseBtn").style.display = "none";
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timerSeconds / 60);
+            const seconds = timerSeconds % 60;
+            const timeStr = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+            document.getElementById("timerDisplay").textContent = timeStr;
+
+            // 色変更
+            const display = document.getElementById("timerDisplay");
+            const progress = (timerTotalSeconds - timerSeconds) / timerTotalSeconds * 100;
+            document.getElementById("progressFill").style.width = progress + "%";
+
+            if (timerSeconds <= 5) {
+                display.className = "timer-display danger";
+            } else if (timerSeconds <= 10) {
+                display.className = "timer-display warning";
+            } else {
+                display.className = "timer-display";
+            }
+        }
+
+        function playNotification() {
+            // ブラウザの通知音（Web Audio API）
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 1000;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
         }
 
         // Enterキーでメニュー追加
