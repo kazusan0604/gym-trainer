@@ -267,99 +267,59 @@
         .modal-content {
             background-color: white;
             padding: 40px;
-            border-radius: 10px;
-            text-align: center;
+            border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            max-width: 400px;
             width: 90%;
+            max-width: 500px;
         }
 
-        .timer-display {
-            font-size: 72px;
-            font-weight: bold;
-            color: #667eea;
-            margin: 30px 0;
-            font-family: 'Courier New', monospace;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .timer-display.warning {
-            color: #ff9800;
-        }
-
-        .timer-display.danger {
-            color: #dc3545;
+        /* タイマー表示エリア */
+        .timer-header {
+            text-align: center;
+            margin-bottom: 40px;
         }
 
         .timer-name {
-            font-size: 24px;
+            font-size: 28px;
             color: #333;
-            margin-bottom: 10px;
             font-weight: bold;
+            margin-bottom: 8px;
         }
 
         .timer-info {
             color: #666;
-            margin-bottom: 20px;
-        }
-
-        .timer-settings {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .timer-settings input {
-            width: 80px;
-            padding: 8px;
             font-size: 16px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            text-align: center;
+            margin-bottom: 20px;
         }
 
-        .timer-settings button {
-            padding: 8px 15px;
-            font-size: 14px;
+        .timer-display {
+            font-size: 120px;
+            font-weight: bold;
+            color: #667eea;
+            font-family: 'Courier New', monospace;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            line-height: 1;
+            margin: 20px 0;
         }
 
-        .timer-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 30px;
+        .timer-display.warning {
+            color: #ff9800;
+            animation: pulse-warning 0.5s infinite;
         }
 
-        .timer-buttons button {
-            flex: 1;
-            padding: 15px;
-            font-size: 18px;
+        .timer-display.danger {
+            color: #dc3545;
+            animation: pulse-danger 0.3s infinite;
         }
 
-        .btn-play {
-            background-color: #28a745;
+        @keyframes pulse-warning {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
-        .btn-play:hover {
-            background-color: #218838;
-        }
-
-        .btn-pause {
-            background-color: #ff9800;
-        }
-
-        .btn-pause:hover {
-            background-color: #e68900;
-        }
-
-        .btn-close-modal {
-            background-color: #6c757d;
-        }
-
-        .btn-close-modal:hover {
-            background-color: #5a6268;
+        @keyframes pulse-danger {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .progress-bar {
@@ -367,7 +327,7 @@
             height: 8px;
             background-color: #eee;
             border-radius: 4px;
-            margin-top: 20px;
+            margin: 30px 0;
             overflow: hidden;
         }
 
@@ -377,19 +337,38 @@
             transition: width 0.1s;
         }
 
+        /* タイマー設定エリア */
+        .timer-controls-section {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .timer-controls-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 12px;
+            text-align: left;
+        }
+
         .preset-buttons {
-            display: flex;
-            gap: 5px;
-            justify-content: center;
-            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
         }
 
         .preset-btn {
             background-color: #e0e0e0;
             color: #333;
-            padding: 6px 12px;
-            font-size: 12px;
+            padding: 10px 12px;
+            font-size: 13px;
             border-radius: 5px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
         }
 
         .preset-btn:hover {
@@ -399,6 +378,84 @@
         .preset-btn.active {
             background-color: #667eea;
             color: white;
+            border-color: #5568d3;
+        }
+
+        .timer-settings {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .timer-settings input {
+            flex: 1;
+            padding: 8px;
+            font-size: 14px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .timer-settings button {
+            padding: 8px 15px;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        /* タイマーアクションボタン */
+        .timer-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .timer-buttons.playing {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .timer-buttons button {
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+
+        .btn-play {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-play:hover {
+            background-color: #218838;
+        }
+
+        .btn-pause {
+            background-color: #ff9800;
+            color: white;
+        }
+
+        .btn-pause:hover {
+            background-color: #e68900;
+        }
+
+        .btn-close-modal {
+            background-color: #6c757d;
+            color: white;
+            grid-column: 1 / -1;
+        }
+
+        .btn-close-modal:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-settings-toggle {
+            background-color: #17a2b8;
+            color: white;
+            grid-column: 1 / -1;
+        }
+
+        .btn-settings-toggle:hover {
+            background-color: #138496;
         }
     </style>
 </head>
@@ -436,32 +493,36 @@
     <!-- タイマーモーダル -->
     <div id="timerModal" class="modal">
         <div class="modal-content">
-            <div class="timer-name" id="timerName">タイマー</div>
-            <div class="timer-info" id="timerInfo">残り時間</div>
-            
-            <!-- タイマー設定 -->
-            <div class="timer-settings" id="timerSettings" style="display: none;">
-                <label>休憩時間（秒）:</label>
-                <input type="number" id="timerInput" min="1" max="600" value="60">
-                <button class="btn-warning" onclick="applyTimerSetting()">設定</button>
+            <!-- タイマー表示部分 -->
+            <div class="timer-header">
+                <div class="timer-name" id="timerName">タイマー</div>
+                <div class="timer-info" id="timerInfo">セット情報</div>
+                <div class="timer-display" id="timerDisplay">00:00</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                </div>
             </div>
 
-            <!-- プリセットボタン -->
-            <div class="preset-buttons">
-                <button class="preset-btn" onclick="setTimerPreset(30)">30秒</button>
-                <button class="preset-btn" onclick="setTimerPreset(60)">1分</button>
-                <button class="preset-btn" onclick="setTimerPreset(90)">1分30秒</button>
-                <button class="preset-btn" onclick="setTimerPreset(120)">2分</button>
+            <!-- タイマー制御エリア -->
+            <div class="timer-controls-section">
+                <div class="timer-controls-title">⏱️ 休憩時間設定</div>
+                
+                <div class="preset-buttons">
+                    <button class="preset-btn" onclick="setTimerPreset(30)">30秒</button>
+                    <button class="preset-btn" onclick="setTimerPreset(60)">1分</button>
+                    <button class="preset-btn" onclick="setTimerPreset(90)">1分30秒</button>
+                    <button class="preset-btn" onclick="setTimerPreset(120)">2分</button>
+                </div>
+
+                <div class="timer-settings">
+                    <input type="number" id="timerInput" min="1" max="600" value="60">
+                    <button class="btn-warning" onclick="applyTimerSetting()">設定</button>
+                </div>
             </div>
 
-            <div class="timer-display" id="timerDisplay">00:00</div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
-            </div>
-            <div class="timer-buttons">
+            <!-- 操作ボタン -->
+            <div class="timer-buttons" id="timerButtonsContainer">
                 <button class="btn-play" id="playBtn" onclick="startTimer()">開始</button>
-                <button class="btn-pause" id="pauseBtn" onclick="pauseTimer()" style="display: none;">一時停止</button>
-                <button class="btn-warning" onclick="toggleTimerSettings()">⚙️ 設定</button>
                 <button class="btn-close-modal" onclick="closeTimer()">閉じる</button>
             </div>
         </div>
@@ -641,10 +702,10 @@
             document.getElementById("timerName").textContent = menu[index].name;
             document.getElementById("timerInfo").textContent = `セット ${menu[index].sets} × ${menu[index].reps}回`;
             document.getElementById("timerInput").value = timerSeconds;
-            document.getElementById("timerSettings").style.display = "none";
             document.getElementById("timerModal").classList.add("active");
             updateTimerDisplay();
             updatePresetButtons();
+            resetButtonLayout();
         }
 
         function closeTimer() {
@@ -658,8 +719,7 @@
         function startTimer() {
             if (timerRunning) return;
             timerRunning = true;
-            document.getElementById("playBtn").style.display = "none";
-            document.getElementById("pauseBtn").style.display = "block";
+            updateButtonLayout();
 
             timerInterval = setInterval(() => {
                 timerSeconds--;
@@ -669,8 +729,7 @@
                     clearInterval(timerInterval);
                     timerRunning = false;
                     playNotification();
-                    document.getElementById("playBtn").style.display = "block";
-                    document.getElementById("pauseBtn").style.display = "none";
+                    resetButtonLayout();
                 }
             }, 1000);
         }
@@ -678,9 +737,38 @@
         function pauseTimer() {
             clearInterval(timerInterval);
             timerRunning = false;
+            resetButtonLayout();
+        }
+
+        function updateButtonLayout() {
+            const container = document.getElementById("timerButtonsContainer");
+            if (timerRunning) {
+                container.classList.add("playing");
+                document.getElementById("playBtn").style.display = "none";
+                document.getElementById("pauseBtn").style.display = "block";
+            }
+        }
+
+        function resetButtonLayout() {
+            const container = document.getElementById("timerButtonsContainer");
+            container.classList.remove("playing");
             document.getElementById("playBtn").style.display = "block";
             document.getElementById("pauseBtn").style.display = "none";
         }
+
+        function createPauseButton() {
+            if (!document.getElementById("pauseBtn")) {
+                const btn = document.createElement("button");
+                btn.id = "pauseBtn";
+                btn.className = "btn-pause";
+                btn.textContent = "一時停止";
+                btn.onclick = pauseTimer;
+                btn.style.display = "none";
+                document.getElementById("timerButtonsContainer").insertBefore(btn, document.getElementById("timerButtonsContainer").firstChild.nextSibling);
+            }
+        }
+
+        createPauseButton();
 
         function updateTimerDisplay() {
             const minutes = Math.floor(timerSeconds / 60);
@@ -688,7 +776,7 @@
             const timeStr = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
             document.getElementById("timerDisplay").textContent = timeStr;
 
-            // 色変更
+            // 色変更とアニメーション
             const display = document.getElementById("timerDisplay");
             const progress = (timerTotalSeconds - timerSeconds) / timerTotalSeconds * 100;
             document.getElementById("progressFill").style.width = progress + "%";
@@ -700,11 +788,6 @@
             } else {
                 display.className = "timer-display";
             }
-        }
-
-        function toggleTimerSettings() {
-            const settings = document.getElementById("timerSettings");
-            settings.style.display = settings.style.display === "none" ? "flex" : "none";
         }
 
         function applyTimerSetting() {
