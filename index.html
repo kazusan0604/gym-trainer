@@ -128,6 +128,7 @@
             color: white;
             padding: 8px 12px;
             font-size: 14px;
+            position: relative;
         }
 
         .btn-timer:hover {
@@ -136,6 +137,18 @@
 
         .btn-timer.active {
             background-color: #ff9800;
+        }
+
+        .btn-timer-edit {
+            background-color: #17a2b8;
+            color: white;
+            padding: 8px 12px;
+            font-size: 14px;
+            margin-left: 5px;
+        }
+
+        .btn-timer-edit:hover {
+            background-color: #138496;
         }
 
         ul {
@@ -198,6 +211,7 @@
             display: flex;
             gap: 5px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .empty-message {
@@ -289,6 +303,28 @@
             margin-bottom: 20px;
         }
 
+        .timer-settings {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer-settings input {
+            width: 80px;
+            padding: 8px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .timer-settings button {
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
         .timer-buttons {
             display: flex;
             gap: 10px;
@@ -340,6 +376,30 @@
             background-color: #667eea;
             transition: width 0.1s;
         }
+
+        .preset-buttons {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .preset-btn {
+            background-color: #e0e0e0;
+            color: #333;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 5px;
+        }
+
+        .preset-btn:hover {
+            background-color: #d0d0d0;
+        }
+
+        .preset-btn.active {
+            background-color: #667eea;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -378,6 +438,22 @@
         <div class="modal-content">
             <div class="timer-name" id="timerName">タイマー</div>
             <div class="timer-info" id="timerInfo">残り時間</div>
+            
+            <!-- タイマー設定 -->
+            <div class="timer-settings" id="timerSettings" style="display: none;">
+                <label>休憩時間（秒）:</label>
+                <input type="number" id="timerInput" min="1" max="600" value="60">
+                <button class="btn-warning" onclick="applyTimerSetting()">設定</button>
+            </div>
+
+            <!-- プリセットボタン -->
+            <div class="preset-buttons">
+                <button class="preset-btn" onclick="setTimerPreset(30)">30秒</button>
+                <button class="preset-btn" onclick="setTimerPreset(60)">1分</button>
+                <button class="preset-btn" onclick="setTimerPreset(90)">1分30秒</button>
+                <button class="preset-btn" onclick="setTimerPreset(120)">2分</button>
+            </div>
+
             <div class="timer-display" id="timerDisplay">00:00</div>
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
@@ -385,6 +461,7 @@
             <div class="timer-buttons">
                 <button class="btn-play" id="playBtn" onclick="startTimer()">開始</button>
                 <button class="btn-pause" id="pauseBtn" onclick="pauseTimer()" style="display: none;">一時停止</button>
+                <button class="btn-warning" onclick="toggleTimerSettings()">⚙️ 設定</button>
                 <button class="btn-close-modal" onclick="closeTimer()">閉じる</button>
             </div>
         </div>
@@ -424,6 +501,7 @@
                     </div>
                     <div class="menu-actions">
                         <button class="btn-timer" onclick="openTimer(${index})">⏱ ${item.rest || 60}秒</button>
+                        <button class="btn-timer-edit" onclick="editRestTime(${index})">⏱ 編集</button>
                         <button class="btn-warning" onclick="editMenu(${index})">編集</button>
                         <button class="btn-danger" onclick="deleteMenu(${index})">削除</button>
                     </div>
@@ -509,6 +587,18 @@
                 return;
             }
 
+            menu[index] = {
+                name: newName.trim(),
+                sets: parseInt(newSets),
+                reps: parseInt(newReps),
+                rest: item.rest || 60,
+                done: item.done
+            };
+            render();
+        }
+
+        function editRestTime(index) {
+            const item = menu[index];
             const newRest = prompt("休憩時間を入力（秒）:", item.rest || 60);
             if (newRest === null) return;
 
@@ -517,13 +607,7 @@
                 return;
             }
 
-            menu[index] = {
-                name: newName.trim(),
-                sets: parseInt(newSets),
-                reps: parseInt(newReps),
-                rest: parseInt(newRest),
-                done: item.done
-            };
+            menu[index].rest = parseInt(newRest);
             render();
         }
 
@@ -556,8 +640,11 @@
             
             document.getElementById("timerName").textContent = menu[index].name;
             document.getElementById("timerInfo").textContent = `セット ${menu[index].sets} × ${menu[index].reps}回`;
+            document.getElementById("timerInput").value = timerSeconds;
+            document.getElementById("timerSettings").style.display = "none";
             document.getElementById("timerModal").classList.add("active");
             updateTimerDisplay();
+            updatePresetButtons();
         }
 
         function closeTimer() {
@@ -613,6 +700,64 @@
             } else {
                 display.className = "timer-display";
             }
+        }
+
+        function toggleTimerSettings() {
+            const settings = document.getElementById("timerSettings");
+            settings.style.display = settings.style.display === "none" ? "flex" : "none";
+        }
+
+        function applyTimerSetting() {
+            const newValue = parseInt(document.getElementById("timerInput").value);
+            if (!newValue || newValue <= 0) {
+                alert("1以上の数値を入力してください");
+                return;
+            }
+            
+            if (timerRunning) {
+                pauseTimer();
+            }
+            
+            timerSeconds = newValue;
+            timerTotalSeconds = newValue;
+            updateTimerDisplay();
+            updatePresetButtons();
+            
+            // メニューにも反映
+            if (currentTimerIndex >= 0) {
+                menu[currentTimerIndex].rest = newValue;
+                localStorage.setItem("gymMenu", JSON.stringify(menu));
+            }
+        }
+
+        function setTimerPreset(seconds) {
+            if (timerRunning) {
+                pauseTimer();
+            }
+            
+            timerSeconds = seconds;
+            timerTotalSeconds = seconds;
+            document.getElementById("timerInput").value = seconds;
+            updateTimerDisplay();
+            updatePresetButtons();
+            
+            // メニューにも反映
+            if (currentTimerIndex >= 0) {
+                menu[currentTimerIndex].rest = seconds;
+                localStorage.setItem("gymMenu", JSON.stringify(menu));
+            }
+        }
+
+        function updatePresetButtons() {
+            const presets = [30, 60, 90, 120];
+            const buttons = document.querySelectorAll(".preset-btn");
+            buttons.forEach((btn, index) => {
+                if (presets[index] === timerSeconds) {
+                    btn.classList.add("active");
+                } else {
+                    btn.classList.remove("active");
+                }
+            });
         }
 
         function playNotification() {
